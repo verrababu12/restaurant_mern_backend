@@ -115,41 +115,41 @@ const deleteProduct = async (req, res) => {
   res.json({ message: "Product deleted" });
 };
 
-const getProducts = async (req, res) => {
-  const { page = 1, limit = 6, sort, search } = req.query;
-  const sortQuery =
-    sort === "asc" ? { rating: 1 } : sort === "desc" ? { rating: -1 } : {};
-
-  // ✅ Apply Search Filter
-  const searchFilter = search
-    ? { category: { $regex: search, $options: "i" } }
-    : {};
-
-  const total = await Product.countDocuments(searchFilter);
-  const restaurants = await Product.find(searchFilter)
-    .sort(sortQuery)
-    .skip((page - 1) * limit)
-    .limit(Number(limit));
-
-  res.json({
-    success: true,
-    restaurants,
-    totalPages: Math.ceil(total / limit),
-  });
-};
 // const getProducts = async (req, res) => {
-//   try {
-//     const { sort } = req.query;
-//     let sortOrder = sort === "asc" ? 1 : -1;
-//     const restaurants = await Product.find().sort({ rating: sortOrder });
-//     res.json({
-//       success: true,
-//       restaurants,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: "server Error ", error });
-//   }
+//   const { page = 1, limit = 6, sort, search } = req.query;
+//   const sortQuery =
+//     sort === "asc" ? { rating: 1 } : sort === "desc" ? { rating: -1 } : {};
+
+//   // ✅ Apply Search Filter
+//   const searchFilter = search
+//     ? { category: { $regex: search, $options: "i" } }
+//     : {};
+
+//   const total = await Product.countDocuments(searchFilter);
+//   const restaurants = await Product.find(searchFilter)
+//     .sort(sortQuery)
+//     .skip((page - 1) * limit)
+//     .limit(Number(limit));
+
+//   res.json({
+//     success: true,
+//     restaurants,
+//     totalPages: Math.ceil(total / limit),
+//   });
 // };
+const getProducts = async (req, res) => {
+  try {
+    const { sort } = req.query;
+    let sortOrder = sort === "asc" ? 1 : -1;
+    const restaurants = await Product.find().sort({ rating: sortOrder });
+    res.json({
+      success: true,
+      restaurants,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "server Error ", error });
+  }
+};
 
 //User APIs
 
