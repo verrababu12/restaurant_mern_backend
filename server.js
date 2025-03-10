@@ -115,29 +115,28 @@ const deleteProduct = async (req, res) => {
   res.json({ message: "Product deleted" });
 };
 
-const getProducts = async (req, res) => {
-  try {
-    const { sort = "desc", page = 1, limit = 6 } = req.query;
-    let sortOrder = sort === "asc" ? 1 : -1;
+router.get("/api/products", async (req, res) => {
+  const { page = 1, limit = 6, sort, search } = req.query;
+  const sortQuery =
+    sort === "asc" ? { rating: 1 } : sort === "desc" ? { rating: -1 } : {};
 
-    const totalRestaurants = await Product.countDocuments();
-    const totalPages = Math.ceil(totalRestaurants / limit);
+  // ✅ Apply Search Filter
+  const searchFilter = search
+    ? { category: { $regex: search, $options: "i" } }
+    : {};
 
-    const restaurants = await Product.find()
-      .sort({ rating: sortOrder }) // ⭐ First, apply sorting
-      .skip((page - 1) * limit) // ⭐ Then apply pagination
-      .limit(Number(limit));
+  const total = await Restaurant.countDocuments(searchFilter);
+  const restaurants = await Restaurant.find(searchFilter)
+    .sort(sortQuery)
+    .skip((page - 1) * limit)
+    .limit(Number(limit));
 
-    res.json({
-      success: true,
-      restaurants,
-      totalPages,
-      currentPage: Number(page),
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
-  }
-};
+  res.json({
+    success: true,
+    restaurants,
+    totalPages: Math.ceil(total / limit),
+  });
+});
 
 // const getProducts = async (req, res) => {
 //   try {
