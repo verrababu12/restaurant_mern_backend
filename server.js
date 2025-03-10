@@ -115,7 +115,7 @@ const deleteProduct = async (req, res) => {
   res.json({ message: "Product deleted" });
 };
 
-router.get("/api/products", async (req, res) => {
+const getProducts = async (req, res) => {
   const { page = 1, limit = 6, sort, search } = req.query;
   const sortQuery =
     sort === "asc" ? { rating: 1 } : sort === "desc" ? { rating: -1 } : {};
@@ -136,8 +136,7 @@ router.get("/api/products", async (req, res) => {
     restaurants,
     totalPages: Math.ceil(total / limit),
   });
-});
-
+};
 // const getProducts = async (req, res) => {
 //   try {
 //     const { sort } = req.query;
