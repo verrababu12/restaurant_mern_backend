@@ -125,8 +125,8 @@ const getProducts = async (req, res) => {
     ? { category: { $regex: search, $options: "i" } }
     : {};
 
-  const total = await Restaurant.countDocuments(searchFilter);
-  const restaurants = await Restaurant.find(searchFilter)
+  const total = await Product.countDocuments(searchFilter);
+  const restaurants = await Product.find(searchFilter)
     .sort(sortQuery)
     .skip((page - 1) * limit)
     .limit(Number(limit));
