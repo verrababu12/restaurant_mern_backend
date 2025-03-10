@@ -139,28 +139,27 @@ const deleteProduct = async (req, res) => {
 // };
 const getProducts = async (req, res) => {
   try {
-    const { sort, page = 1, limit = 6 } = req.query;
+    let { sort, page = 1, limit = 6 } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
     let sortOrder = {};
 
-    if (sort === "asc" || sort === "desc") {
-      sortOrder.rating = sort === "asc" ? 1 : -1;
-    }
+    if (sort === "asc") sortOrder.rating = 1;
+    else if (sort === "desc") sortOrder.rating = -1;
 
-    const skip = (page - 1) * limit;
-    const totalRestaurants = await Product.countDocuments();
+    const totalCount = await Product.countDocuments();
+    const totalPages = Math.ceil(totalCount / limit);
 
     const restaurants = await Product.find()
-      .sort(sortOrder) // Apply sorting
-      .skip(skip) // Skip previous pages
-      .limit(Number(limit)); // Limit results
-
-    const totalPages = Math.ceil(totalRestaurants / limit);
+      .sort(sortOrder)
+      .skip((page - 1) * limit)
+      .limit(limit);
 
     res.json({
       success: true,
       restaurants,
       totalPages,
-      currentPage: Number(page),
+      currentPage: page,
     });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
