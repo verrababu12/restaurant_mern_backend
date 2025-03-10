@@ -119,23 +119,23 @@ const getProducts = async (req, res) => {
   try {
     const { sort, page = 1, limit = 6 } = req.query;
     let sortOrder = sort === "asc" ? 1 : -1;
-    const skip = (page - 1) * limit;
 
-    // Convert page and limit to integers
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
+    const pageNumber = parseInt(page);
+    const itemsPerPage = parseInt(limit);
 
-    const totalRestaurants = await Product.countDocuments(); // Get total count
+    const totalItems = await Product.countDocuments(); // Get total items count
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
     const restaurants = await Product.find()
       .sort({ rating: sortOrder })
-      .skip(skip)
-      .limit(limitNum);
+      .skip((pageNumber - 1) * itemsPerPage)
+      .limit(itemsPerPage);
 
     res.json({
       success: true,
       restaurants,
-      totalPages: Math.ceil(totalRestaurants / limitNum), // Ensure this value exists
-      currentPage: pageNum, // Ensure this value exists
+      totalPages,
+      currentPage: pageNumber,
     });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
