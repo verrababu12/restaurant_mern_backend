@@ -115,31 +115,65 @@ const deleteProduct = async (req, res) => {
   res.json({ message: "Product deleted" });
 };
 
-// ✅ Backend: getProducts controller
-
 const getProducts = async (req, res) => {
   try {
     const { sort, page = 1, limit = 6 } = req.query;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    let restaurants = await Product.find().skip(skip).limit(parseInt(limit));
+    let sortOption = {};
 
-    // ✅ Sort only those 6 items on the backend
+    // ✅ Apply sort to the query
     if (sort === "asc") {
-      restaurants.sort((a, b) => a.rating - b.rating);
+      sortOption = { rating: 1 }; // Ascending order (Low to High)
     } else if (sort === "desc") {
-      restaurants.sort((a, b) => b.rating - a.rating);
+      sortOption = { rating: -1 }; // Descending order (High to Low)
     }
+
+    // Query the database with the sorting applied
+    const restaurants = await Product.find()
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort(sortOption);
+
+    const totalCount = await Product.countDocuments();
 
     res.json({
       success: true,
       restaurants,
-      totalCount: 100,
+      totalCount,
     });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
   }
 };
+
+// ✅ Backend: getProducts controller
+
+// const getProducts = async (req, res) => {
+//   try {
+//     const { sort, page = 1, limit = 6 } = req.query;
+
+//     const skip = (parseInt(page) - 1) * parseInt(limit);
+//     let restaurants = await Product.find().skip(skip).limit(parseInt(limit));
+
+//     const totalCount = await Product.countDocuments();
+
+//     // ✅ Sort only those 6 items on the backend
+//     if (sort === "asc") {
+//       restaurants.sort((a, b) => a.rating - b.rating);
+//     } else if (sort === "desc") {
+//       restaurants.sort((a, b) => b.rating - a.rating);
+//     }
+
+//     res.json({
+//       success: true,
+//       restaurants,
+//       totalCount,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server Error", error });
+//   }
+// };
 
 //User APIs
 
