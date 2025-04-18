@@ -134,6 +134,7 @@ const getProducts = async (req, res) => {
     res.json({
       success: true,
       restaurants,
+      totalCount: 100,
     });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
