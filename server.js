@@ -115,27 +115,28 @@ const deleteProduct = async (req, res) => {
   res.json({ message: "Product deleted" });
 };
 
+// ✅ Backend: getProducts controller
+
 const getProducts = async (req, res) => {
   try {
     const { sort, page = 1, limit = 6 } = req.query;
-    const sortOrder = sort === "asc" ? 1 : sort === "desc" ? -1 : 0;
 
-    const skip = (page - 1) * limit;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    let restaurants = await Product.find().skip(skip).limit(parseInt(limit));
 
-    const restaurants = await Product.find()
-      .sort(sortOrder ? { rating: sortOrder } : {})
-      .skip(Number(skip))
-      .limit(Number(limit));
-
-    const total = await Product.countDocuments();
+    // ✅ Sort only those 6 items on the backend
+    if (sort === "asc") {
+      restaurants.sort((a, b) => a.rating - b.rating);
+    } else if (sort === "desc") {
+      restaurants.sort((a, b) => b.rating - a.rating);
+    }
 
     res.json({
       success: true,
       restaurants,
-      total,
     });
   } catch (error) {
-    res.status(500).json({ message: "server Error ", error });
+    res.status(500).json({ message: "Server Error", error });
   }
 };
 
