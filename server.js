@@ -115,6 +115,11 @@ const deleteProduct = async (req, res) => {
   res.json({ message: "Product deleted" });
 };
 
+const allProductsToAdmin = async (req, res) => {
+  const products = await Product.find({});
+  res.json(products);
+};
+
 const getProducts = async (req, res) => {
   try {
     const { sort, page = 1, limit = 6 } = req.query;
@@ -256,6 +261,7 @@ app.put("/api/:id", protect, admin, updateProduct);
 app.delete("/api/:id", protect, admin, deleteProduct);
 app.get("/api/products", getProducts);
 app.get("/api/products/:restaurant_id", getProductsById);
+app.get("/api/allProductsToAdmin", allProductsToAdmin);
 
 app.post("/api/register", registerUser);
 app.post("/api/login", loginUser);
