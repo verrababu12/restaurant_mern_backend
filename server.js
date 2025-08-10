@@ -1,269 +1,292 @@
 const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
 const dotenv = require("dotenv");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const User = require("./models/userModel");
-const Product = require("./models/productModel");
+const cors = require("cors");
+const connectDB = require("./config/db");
 
 dotenv.config();
+connectDB();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.listen(3001, () => {
-  console.log(`Server Running at http://localhost:3001`);
-});
+// Routes
+app.use("/api/users", require("./routes/userRoutes"));
+app.use("/api/products", require("./routes/productRoutes"));
 
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.send("API IS Running...");
 });
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("Mongodb Connected"))
-  .catch((err) => console.log(err));
+app.listen(3001, () => console.log(`Server running on port 3001`));
 
-//Auth Middleware
+// const express = require("express");
+// const mongoose = require("mongoose");
+// const cors = require("cors");
+// const dotenv = require("dotenv");
+// const jwt = require("jsonwebtoken");
+// const bcrypt = require("bcryptjs");
+// const User = require("./models/userModel");
+// const Product = require("./models/productModel");
 
-const protect = async (req, res, next) => {
-  let token = req.headers.authorization;
-  if (token) {
-    try {
-      const decoded = jwt.verify(
-        token.split(" ")[1],
-        process.env.JWT_SECRET_TOKEN
-      );
-      req.user = await User.findById(decoded.id).select("-password");
-      next();
-    } catch (error) {
-      res.status(401).json({ message: "Not authorized" });
-    }
-  } else {
-    res.status(401).json({ message: "No token, not authorized" });
-  }
-};
+// dotenv.config();
 
-//Admin Secured Check
+// const app = express();
 
-const admin = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    next();
-  } else {
-    res.status(403).json({ message: "Not authorized as admin" });
-  }
-};
+// app.use(cors());
+// app.use(express.json());
 
-//Product APIs
+// app.listen(3001, () => {
+//   console.log(`Server Running at http://localhost:3001`);
+// });
 
-const addProducts = async (req, res) => {
-  try {
-    const products = await Product.insertMany(req.body);
-    res.status(201).json({ message: "Products added successfully", products });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error adding products", error: error.message });
-  }
-};
+// app.get("/", (req, res) => {
+//   res.send("Hello World!");
+// });
 
-const getProductsById = async (req, res) => {
-  try {
-    const { restaurant_id } = req.params;
-    const restaurant = await Product.findById(restaurant_id);
-    if (!restaurant) {
-      return res.status(404).json({ message: "Restaurant not found" });
-    }
-    res.json({
-      success: true,
-      restaurant,
-      food_items: restaurant.food_items,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server error ", error });
-  }
-};
+// mongoose
+//   .connect(process.env.MONGO_URI)
+//   .then(() => console.log("Mongodb Connected"))
+//   .catch((err) => console.log(err));
 
-const createProduct = async (req, res) => {
-  const product = await Product.create(req.body);
-  res.status(201).json(product);
-};
+// //Auth Middleware
 
-const updateProduct = async (req, res) => {
-  const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-  });
+// const protect = async (req, res, next) => {
+//   let token = req.headers.authorization;
+//   if (token) {
+//     try {
+//       const decoded = jwt.verify(
+//         token.split(" ")[1],
+//         process.env.JWT_SECRET_TOKEN
+//       );
+//       req.user = await User.findById(decoded.id).select("-password");
+//       next();
+//     } catch (error) {
+//       res.status(401).json({ message: "Not authorized" });
+//     }
+//   } else {
+//     res.status(401).json({ message: "No token, not authorized" });
+//   }
+// };
 
-  if (!product) {
-    return res.status(404).json({ message: "Product not found" });
-  }
+// //Admin Secured Check
 
-  res.json(product);
-};
+// const admin = (req, res, next) => {
+//   if (req.user && req.user.role === "admin") {
+//     next();
+//   } else {
+//     res.status(403).json({ message: "Not authorized as admin" });
+//   }
+// };
 
-const deleteProduct = async (req, res) => {
-  const product = await Product.findById(req.params.id);
+// //Product APIs
 
-  if (!product) {
-    return res.status(404).json({ message: "Product not found" });
-  }
+// const addProducts = async (req, res) => {
+//   try {
+//     const products = await Product.insertMany(req.body);
+//     res.status(201).json({ message: "Products added successfully", products });
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .json({ message: "Error adding products", error: error.message });
+//   }
+// };
 
-  await product.deleteOne();
-  res.json({ message: "Product deleted" });
-};
+// const getProductsById = async (req, res) => {
+//   try {
+//     const { restaurant_id } = req.params;
+//     const restaurant = await Product.findById(restaurant_id);
+//     if (!restaurant) {
+//       return res.status(404).json({ message: "Restaurant not found" });
+//     }
+//     res.json({
+//       success: true,
+//       restaurant,
+//       food_items: restaurant.food_items,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error ", error });
+//   }
+// };
 
-const allProductsToAdmin = async (req, res) => {
-  const products = await Product.find({});
-  res.json(products);
-};
+// const createProduct = async (req, res) => {
+//   const product = await Product.create(req.body);
+//   res.status(201).json(product);
+// };
 
-const getProducts = async (req, res) => {
-  try {
-    const { sort, page = 1, limit = 6 } = req.query;
+// const updateProduct = async (req, res) => {
+//   const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+//     new: true,
+//   });
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    let restaurants = await Product.find().skip(skip).limit(parseInt(limit));
+//   if (!product) {
+//     return res.status(404).json({ message: "Product not found" });
+//   }
 
-    const totalCount = await Product.countDocuments();
+//   res.json(product);
+// };
 
-    // ✅ Sort only those 6 items on the backend
-    if (sort === "asc") {
-      restaurants.sort((a, b) => a.rating - b.rating);
-    } else if (sort === "desc") {
-      restaurants.sort((a, b) => b.rating - a.rating);
-    }
+// const deleteProduct = async (req, res) => {
+//   const product = await Product.findById(req.params.id);
 
-    res.json({
-      success: true,
-      restaurants,
-      totalCount,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
-  }
-};
+//   if (!product) {
+//     return res.status(404).json({ message: "Product not found" });
+//   }
 
-//User APIs
+//   await product.deleteOne();
+//   res.json({ message: "Product deleted" });
+// };
 
-const registerUser = async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
+// const allProductsToAdmin = async (req, res) => {
+//   const products = await Product.find({});
+//   res.json(products);
+// };
 
-    // Check if user already exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
+// const getProducts = async (req, res) => {
+//   try {
+//     const { sort, page = 1, limit = 6 } = req.query;
 
-    //  Validate password BEFORE hashing
-    const tempUser = new User({ name, email, password, role: role || "user" });
-    const validationError = tempUser.validateSync();
-    if (validationError) {
-      const errors = Object.values(validationError.errors).map(
-        (err) => err.message
-      );
-      return res.status(400).json({ errors });
-    }
+//     const skip = (parseInt(page) - 1) * parseInt(limit);
+//     let restaurants = await Product.find().skip(skip).limit(parseInt(limit));
 
-    // ✅ Now hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+//     const totalCount = await Product.countDocuments();
 
-    // ✅ Create user and save
-    const user = new User({
-      name,
-      email,
-      password: hashedPassword,
-      role: role || "user",
-    });
+//     // ✅ Sort only those 6 items on the backend
+//     if (sort === "asc") {
+//       restaurants.sort((a, b) => a.rating - b.rating);
+//     } else if (sort === "desc") {
+//       restaurants.sort((a, b) => b.rating - a.rating);
+//     }
 
-    await user.save();
+//     res.json({
+//       success: true,
+//       restaurants,
+//       totalCount,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server Error", error });
+//   }
+// };
 
-    res.status(201).json({ message: "User registered successfully" });
-  } catch (error) {
-    if (error.name === "ValidationError") {
-      const errors = Object.values(error.errors).map((err) => err.message);
-      return res.status(400).json({ errors });
-    }
-    res.status(500).json({ error: "Something went wrong" });
-  }
-};
+// //User APIs
 
-const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+// const registerUser = async (req, res) => {
+//   try {
+//     const { name, email, password, role } = req.body;
 
-    if (!user) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
+//     // Check if user already exists
+//     const userExists = await User.findOne({ email });
+//     if (userExists) {
+//       return res.status(400).json({ message: "User already exists" });
+//     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
+//     //  Validate password BEFORE hashing
+//     const tempUser = new User({ name, email, password, role: role || "user" });
+//     const validationError = tempUser.validateSync();
+//     if (validationError) {
+//       const errors = Object.values(validationError.errors).map(
+//         (err) => err.message
+//       );
+//       return res.status(400).json({ errors });
+//     }
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET_TOKEN,
-      { expiresIn: "30d" }
-    );
+//     // ✅ Now hash the password
+//     const hashedPassword = await bcrypt.hash(password, 10);
 
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token,
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
-  }
-};
+//     // ✅ Create user and save
+//     const user = new User({
+//       name,
+//       email,
+//       password: hashedPassword,
+//       role: role || "user",
+//     });
 
-const getUsers = async (req, res) => {
-  const users = await User.find({});
-  res.json(users);
-};
+//     await user.save();
 
-const updateUserToAdmin = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
+//     res.status(201).json({ message: "User registered successfully" });
+//   } catch (error) {
+//     if (error.name === "ValidationError") {
+//       const errors = Object.values(error.errors).map((err) => err.message);
+//       return res.status(400).json({ errors });
+//     }
+//     res.status(500).json({ error: "Something went wrong" });
+//   }
+// };
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+// const loginUser = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+//     const user = await User.findOne({ email });
 
-    if (user.role === "admin") {
-      return res.status(400).json({ message: "User is already an admin" });
-    }
+//     if (!user) {
+//       return res.status(401).json({ message: "Invalid email or password" });
+//     }
 
-    if (req.user._id.toString() === user._id.toString()) {
-      return res
-        .status(403)
-        .json({ message: "You cannot update your own role" });
-    }
+//     const isPasswordValid = await bcrypt.compare(password, user.password);
+//     if (!isPasswordValid) {
+//       return res.status(401).json({ message: "Invalid email or password" });
+//     }
 
-    user.role = "admin";
-    await user.save();
+//     const token = jwt.sign(
+//       { id: user._id, role: user.role },
+//       process.env.JWT_SECRET_TOKEN,
+//       { expiresIn: "30d" }
+//     );
 
-    res.json({ message: `${user.name} is now an admin` });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
+//     res.json({
+//       _id: user._id,
+//       name: user.name,
+//       email: user.email,
+//       role: user.role,
+//       token,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: "Something went wrong" });
+//   }
+// };
 
-app.post("/api/add-products", addProducts);
-app.post("/api/only-admin", protect, admin, createProduct);
-app.put("/api/:id", protect, admin, updateProduct);
-app.delete("/api/:id", protect, admin, deleteProduct);
-app.get("/api/products", getProducts);
-app.get("/api/products/:restaurant_id", getProductsById);
-app.get("/api/allProductsToAdmin", allProductsToAdmin);
+// const getUsers = async (req, res) => {
+//   const users = await User.find({});
+//   res.json(users);
+// };
 
-app.post("/api/register", registerUser);
-app.post("/api/login", loginUser);
-app.get("/api/users", protect, admin, getUsers);
-app.put("/api/users/:id/make-admin", protect, admin, updateUserToAdmin);
+// const updateUserToAdmin = async (req, res) => {
+//   try {
+//     const user = await User.findById(req.params.id);
+
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     if (user.role === "admin") {
+//       return res.status(400).json({ message: "User is already an admin" });
+//     }
+
+//     if (req.user._id.toString() === user._id.toString()) {
+//       return res
+//         .status(403)
+//         .json({ message: "You cannot update your own role" });
+//     }
+
+//     user.role = "admin";
+//     await user.save();
+
+//     res.json({ message: `${user.name} is now an admin` });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// };
+
+// app.post("/api/add-products", addProducts);
+// app.post("/api/only-admin", protect, admin, createProduct);
+// app.put("/api/:id", protect, admin, updateProduct);
+// app.delete("/api/:id", protect, admin, deleteProduct);
+// app.get("/api/products", getProducts);
+// app.get("/api/products/:restaurant_id", getProductsById);
+// app.get("/api/allProductsToAdmin", allProductsToAdmin);
+
+// app.post("/api/register", registerUser);
+// app.post("/api/login", loginUser);
+// app.get("/api/users", protect, admin, getUsers);
+// app.put("/api/users/:id/make-admin", protect, admin, updateUserToAdmin);
